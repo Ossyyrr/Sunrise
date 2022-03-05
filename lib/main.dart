@@ -101,30 +101,19 @@ class _MyHomePageState extends State<MyHomePage> {
   List<double>? _magnetometerValues;
   double az = 0.0;
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
+// SOLAR -----
+  double latitude = 41.387048;
+  double longitude = 2.17413425;
+  final instant = Instant(year: 2021, month: 5, day: 10, hour: 14, timeZoneOffset: 2.0);
+  late SolarCalculator calc;
+// SOLAR -----
 
   @override
   void initState() {
     super.initState();
-    _streamSubscriptions.add(
-      magnetometerEvents.listen(
-        (MagnetometerEvent event) {
-          setState(() {
-            _magnetometerValues = <double>[event.x, event.y, event.z];
-            az = 90 - atan2(event.y, event.x) * 180 / pi;
-          });
-        },
-      ),
-    );
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    const latitude = 41.387048;
-    const longitude = 2.17413425;
-
-    final instant = Instant(year: 2021, month: 5, day: 10, hour: 14, timeZoneOffset: 2.0);
-
-    final calc = SolarCalculator(instant, latitude, longitude);
+// SOLAR -----
+    calc = SolarCalculator(instant, latitude, longitude);
 
     print('Sun Equatorial position:');
     print(
@@ -170,9 +159,22 @@ class _MyHomePageState extends State<MyHomePage> {
     print('    Duration: ${calc.eveningAstronomicalTwilight.duration}');
 
     if (calc.isHoursOfDarkness) print('===> IS DARK <===');
+// SOLAR -----
 
-// -----------
+    _streamSubscriptions.add(
+      magnetometerEvents.listen(
+        (MagnetometerEvent event) {
+          setState(() {
+            _magnetometerValues = <double>[event.x, event.y, event.z];
+            az = 90 - atan2(event.y, event.x) * 180 / pi;
+          });
+        },
+      ),
+    );
+  }
 
+  @override
+  Widget build(BuildContext context) {
     final magnetometer = _magnetometerValues?.map((double v) => v.toStringAsFixed(1)).toList();
 
     return Scaffold(
@@ -184,10 +186,22 @@ class _MyHomePageState extends State<MyHomePage> {
         children: <Widget>[
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.arrow_left),
-              Icon(Icons.circle),
-              Icon(Icons.arrow_right),
+            children: [
+              Icon(
+                Icons.arrow_left,
+                color: (calc.sunHorizontalPosition.azimuth.round() > az.round()) ? Colors.green : Colors.red,
+                size: 100,
+              ),
+              Icon(
+                Icons.circle,
+                color: (calc.sunHorizontalPosition.azimuth.round() == az.round()) ? Colors.green : Colors.red,
+                size: 70,
+              ),
+              Icon(
+                Icons.arrow_right,
+                color: (calc.sunHorizontalPosition.azimuth.round() < az.round()) ? Colors.green : Colors.red,
+                size: 100,
+              ),
             ],
           ),
           Text('Magnetometer: $magnetometer'),
